@@ -15,7 +15,7 @@ standard-button($color=currentColor, $dark-color=white)
   cursor: pointer
   color: $color
   &:disabled
-    color: transparent
+    color: alpha($color, 0.1)
   @media (prefers-color-scheme: dark)
     color: $dark-color
 
