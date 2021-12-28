@@ -50,7 +50,7 @@
   import firebase from 'firebase/app'
   import 'firebase/auth'
   import { as_phone_number } from '@/use/profile'
-  import icon from '@/components/icon'
+  import icon from '@/components/icon.vue'
 
   const props = defineProps({
     person: {
@@ -177,6 +177,7 @@
     else button.disabled = true
   }
 </script>
+<!--
 <style lang="stylus">
   form#profile-mobile
     animation-name: slide-in-left
@@ -194,3 +195,4 @@
       display: flex
       justify-content: flex-end
 </style>
+-->

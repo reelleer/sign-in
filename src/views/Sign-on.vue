@@ -34,8 +34,8 @@
   const sign_off = () => {
     signOut()
     nameless.value = false
-    person.value.first_name = null;
-    person.value.last_name = null;
+    person.value.first_name = null
+    person.value.last_name = null
   }
 
   const nameless = ref(false)
@@ -46,6 +46,7 @@
 
   const new_person = () => (nameless.value = false)
 </script>
+<!--
 <style lang="stylus">
   section#sign-on.page
     margin:auto
@@ -69,3 +70,4 @@
         width: 29rem
         margin: base-line
 </style>
+-->

@@ -78,6 +78,7 @@
     }
   }
 </script>
+<!--
 <style lang="stylus">
   form#profile-name
     animation-name: slide-in-left
@@ -94,3 +95,4 @@
       display: flex
       justify-content: flex-end
 </style>
+-->

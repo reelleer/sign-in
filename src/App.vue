@@ -20,7 +20,7 @@
     },
     computed: {
       is_production() {
-        return process.env.NODE_ENV === 'production'
+        return import.meta.env.MODE === 'production'
       }
     },
     async created() {
@@ -29,12 +29,12 @@
         await set('firebase-keys', await response.json())
       } else {
         const keys = {
-          apiKey: process.env.VUE_APP_API_KEY,
-          authDomain: process.env.VUE_APP_AUTH_DOMAIN,
-          databaseUrl: process.env.VUE_APP_DATABASE_URL,
-          projectId: process.env.VUE_APP_PROJECT_ID,
-          storageBucket: process.env.VUE_APP_STORAGE_BUCKET,
-          messagingSenderId: process.env.VUE_APP_MESSAGING_SENDER_ID
+          apiKey: import.meta.env.VITE_API_KEY,
+          authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+          databaseUrl: import.meta.env.VITE_DATABASE_URL,
+          projectId: import.meta.env.VITE_PROJECT_ID,
+          storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+          messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID
         }
         await set('firebase-keys', keys)
       }
@@ -65,6 +65,7 @@
     }
   }
 </script>
+<!--
 <style src="@/style/index.styl" lang="stylus"></style>
 <style lang="stylus">
   main
@@ -79,3 +80,4 @@
       animation-delay: 200ms
       animation-iteration-count: infinite
 </style>
+-->

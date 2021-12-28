@@ -19,11 +19,13 @@ Match the api keys to the variables in`.env.local` file at the root of your proj
 
 `yarn install` From your favorite terminal
 
-`yarn serve` to run the application locally.
+`yarn dev` to run the application locally.
 
 # Testing
 
 `yarn test` will run your tests
+
+> Test are not configured to work with Vite
 
 # lint
 
@@ -32,3 +34,23 @@ Match the api keys to the variables in`.env.local` file at the root of your proj
 # formating
 
 `yarn format` will format your code to projec standards
+
+# Env. rariables
+
+Rename Env. variables:
+
+Old names
+
+    VUE_APP_API_KEY=
+    VUE_APP_AUTH_DOMAIN=
+    VUE_APP_STORAGE_BUCKET=
+    VUE_APP_MESSAGING_SENDER_ID=
+    VUE_APP_APP_ID=
+
+New names
+
+    VITE_API_KEY=
+    VITE_AUTH_DOMAIN=
+    VITE_STORAGE_BUCKET=
+    VITE_MESSAGING_SENDER_ID=
+    VITE_APP_ID=
