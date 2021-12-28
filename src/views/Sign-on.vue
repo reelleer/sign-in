@@ -34,8 +34,8 @@
   const sign_off = () => {
     signOut()
     nameless.value = false
-    person.value.first_name = null;
-    person.value.last_name = null;
+    person.value.first_name = null
+    person.value.last_name = null
   }
 
   const nameless = ref(false)
