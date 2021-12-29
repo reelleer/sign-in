@@ -1,12 +1,12 @@
 <template>
-  <form id="profile-mobile">
-    <fieldset v-if="show_mobil_input" id="phone">
+  <form id="profile-mobile" ref="form">
+    <fieldset v-if="show_mobile_input" id="phone">
       <legend :class="{ valid: validate_mobile_number() }">
         {{ mobile_display }}
       </legend>
       <input
         id="mobile"
-        ref="mobile"
+        ref="mobile_el"
         v-model="mobile"
         type="tel"
         placeholder="1 (555) 555-5555"
@@ -43,135 +43,141 @@
     </menu>
   </form>
 </template>
-<script>
+<script setup>
+  //import { ref, toRef, computed, watch, nextTick, onMounted } from 'vue'
+  import { ref, computed, watch, nextTick } from 'vue'
+  import { parseNumber, AsYouType } from 'libphonenumber-js'
   import firebase from 'firebase/app'
   import 'firebase/auth'
   import { as_phone_number } from '@/use/profile'
-  import icon from '@/components/icon'
-  export default {
-    components: {
-      icon
-    },
-    props: {
-      person: {
-        type: Object,
-        required: true
-      }
-    },
-    emits: ['update:person', 'signed-on'],
-    data() {
-      return {
-        validate: null,
-        mobile: null,
-        working: true,
-        disabled_sign_in: true,
-        code: null,
-        human: null,
-        authorizer: null,
-        show_authorize: false,
-        show_captcha: false,
-        hide_captcha: false,
-        show_code: false
-      }
-    },
-    computed: {
-      show_mobil_input() {
-        if (this.working) return false
-        return true
-      },
-      mobile_display() {
-        if (this.person.mobile)
-          return new this.validate.AsYouType('US').input(this.person.mobile)
-        else return 'Mobile'
-      }
-    },
-    watch: {
-      mobile() {
-        const update = { ...this.person }
-        update.mobile = this.mobile
-        this.$emit('update:person', update)
-      }
-    },
-    async created() {
-      this.validate = await import('libphonenumber-js')
-      this.working = false
-      const updated = { ...this.person }
-      updated.mobile = as_phone_number(this.person.id)
-      if (!updated.mobile.length) updated.mobile = null
-      this.show_authorize = true
-      this.mobile = updated.mobile
-      this.validate_mobile_number()
-    },
-    methods: {
-      validate_mobile_number() {
-        const is_valid =
-          !!this.person.mobile &&
-          this.validate.parseNumber(this.person.mobile, 'US').phone
-        this.disabled_sign_in = !is_valid
-        return is_valid
-      },
-      disable_input() {
-        this.$refs.mobile.disabled = true
-      },
-      async begin_authorization() {
-        // this.working = true
-        this.disable_input()
-        this.show_authorize = false
-        this.show_captcha = true
-        await this.$nextTick()
-        this.human = new firebase.auth.RecaptchaVerifier('captcha', {
-          size: 'invisible',
-          callback: this.text_human_verify_code
-        })
-        this.human.verify()
-      },
-      async text_human_verify_code() {
-        this.working = false
-        this.show_code = true
-        this.show_captcha = false
-        this.hide_captcha = true
-        this.authorizer = await firebase
-          .auth()
-          .signInWithPhoneNumber(`+1${this.person.mobile}`, this.human)
-        this.$el.querySelector('#verification-code').scrollIntoView(false)
-        this.$el.querySelector('#verification-code').focus()
-      },
-      async sign_in_with_code() {
-        this.working = true
-        this.disable_input()
-        this.show_code = false
-        try {
-          await this.authorizer.confirm(this.code)
-          this.$emit('signed-on', this.person)
-        } catch (e) {
-          if (e.code === 'auth/invalid-verification-code') {
-            this.$refs.mobile.disabled = false
-            this.show_code = true
-          }
-        }
-      },
-      mobile_keypress(event) {
-        if (!event.key.match(/^\d$/)) event.preventDefault()
-      },
-      mobile_paste(event) {
-        const past_text = event.clipboardData.getData('text/plain')
-        const phone_number = this.validate.parseNumber(past_text, 'US').phone
-        if (phone_number) {
-          const update = { ...this.person }
-          update.mobile = phone_number
-          this.$emit('update:person', update)
-          return this.validate_mobile_number()
-        } else return false
-      },
-      code_keypress(event) {
-        if (!event.key.match(/^\d$/)) event.preventDefault()
-        const button = this.$el.querySelector('#submit-verification')
-        const input = this.$el.querySelector('#verification-code')
-        if (input.value.length === 5) button.disabled = false
+  import icon from '@/components/icon.vue'
+
+  const props = defineProps({
+    person: {
+      type: Object,
+      required: true
+    }
+  })
+
+  const emit = defineEmits(['update:person', 'signed-on'])
+
+  const mobile = ref(null)
+  const working = ref(false) //true
+  const disabled_sign_in = ref(true)
+  const code = ref(null)
+  const show_authorize = ref(true) //false
+  const show_captcha = ref(false)
+  const hide_captcha = ref(false)
+  const show_code = ref(false)
+
+  const show_mobile_input = computed(() => {
+    if (working.value) return false
+    return true
+  })
+
+  const mobile_display = computed(() => {
+    if (props.person.mobile)
+      return new AsYouType('US').input(props.person.mobile)
+    else return 'Mobile'
+  })
+
+  watch(mobile, () => {
+    const update = { ...props.person }
+    update.mobile = mobile.value
+    emit('update:person', update)
+  })
+
+  const validate_mobile_number = () => {
+    const is_valid =
+      !!props.person.mobile && parseNumber(props.person.mobile, 'US').phone
+    disabled_sign_in.value = !is_valid
+
+    return is_valid
+  }
+
+  if (as_phone_number(props.person.id).length)
+    mobile.value = as_phone_number(props.person.id)
+
+  validate_mobile_number()
+
+  const mobile_el = ref(null)
+
+  const disable_input = () => {
+    mobile_el.value.disabled = true
+  }
+
+  const form = ref(null)
+
+  let human = null
+  let authorizer = null
+
+  const text_human_verify_code = async () => {
+    working.value = false
+    show_code.value = true
+    show_captcha.value = false
+    hide_captcha.value = true
+    authorizer = await firebase
+      .auth()
+      .signInWithPhoneNumber(`+1${props.person.mobile}`, human)
+    form.value.querySelector('#verification-code').scrollIntoView(false)
+    form.value.querySelector('#verification-code').focus()
+  }
+
+  const begin_authorization = async () => {
+    // this.working = true
+    disable_input()
+    show_authorize.value = false
+    show_captcha.value = true
+    await nextTick()
+
+    human = new firebase.auth.RecaptchaVerifier('captcha', {
+      size: 'invisible',
+      callback: text_human_verify_code
+    })
+
+    human.verify()
+  }
+
+  const sign_in_with_code = async () => {
+    working.value = true
+    disable_input()
+    show_code.value = false
+    try {
+      await authorizer.confirm(code.value)
+      emit('signed-on', props.person)
+    } catch (e) {
+      if (e.code === 'auth/invalid-verification-code') {
+        mobile_el.value.disabled = false
+        show_code.value = true
       }
     }
   }
+
+  const mobile_keypress = event => {
+    if (!event.key.match(/^\d$/)) event.preventDefault()
+  }
+
+  const mobile_paste = event => {
+    const past_text = event.clipboardData.getData('text/plain')
+    const phone_number = parseNumber(past_text, 'US').phone
+
+    if (phone_number) {
+      const update = { ...props.person }
+      update.mobile = phone_number
+      emit('update:person', update)
+      return validate_mobile_number()
+    } else return false
+  }
+
+  const code_keypress = event => {
+    if (!event.key.match(/^\d$/)) event.preventDefault()
+    const button = form.value.querySelector('#submit-verification')
+    const input = form.value.querySelector('#verification-code')
+    if (input.value.length === 5) button.disabled = false
+    else button.disabled = true
+  }
 </script>
+<!--
 <style lang="stylus">
   form#profile-mobile
     animation-name: slide-in-left
@@ -189,3 +195,4 @@
       display: flex
       justify-content: flex-end
 </style>
+-->
